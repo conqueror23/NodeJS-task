@@ -1,0 +1,112 @@
+USER endpoints
+
+
+GET /items
+
+
+Returns list of all items:
+{success:true, items: Item[]}
+
+
+GET /item/{id}
+
+
+Returns specific item given id
+{success:true, item: Item}
+Errors: If id of item cannot be found
+{success:false, message:"Item could not be found"}
+
+
+GET /orders
+
+
+Returns list of all orders:
+{success:true, orders: Order[]}
+
+
+GET /order/{id}
+
+
+Returns specific order given id
+{success:true, order: Order}
+Errors: If id of order cannot be found
+{success:false, message:"Order could not be found"}
+
+
+POST /orders
+
+
+Request an order to a specific item
+req.body:
+{itemId: [ITEM_ID], quantity: [AMOUNT] }
+
+
+Returns message if successful
+{success:true, order: Order}
+If item could not be found:
+{success:false, message:"Item could not be found"}
+If item does not have enough stock:
+{success:false, message:"Item does not have enough stock"}
+If req.body not valid:
+{success:false, messsage:"Invalid request"}
+
+
+ADMIN endpoints
+For simplicity, every admin request is appended with a header:
+Authentication: "Bearer {token}". If it contains the right token
+you can assume it was from an admin user.
+
+
+ALL
+If user not an admin:
+{success:false, message:"Unauthorized"}
+If req.body not valid:
+{success:false, messsage:"Invalid request"}
+
+
+POST /items
+
+
+Admin can add new items to the system. If the item already exists
+then increase its quantity.
+req.body:
+{items: {type:string; color:string; size:"S"|"M"|"L"; stock:number;}[]}
+Returns:
+{success:true, itemIds: string[]}
+If one (or more) of the items is invalid:
+{success:false, message:"One (or more) items are invalid"}
+
+
+PATCH /item/{id}
+
+
+Admin can edit the quantity for a given item in the system.
+This should change the stock number for a given item, not add to it.
+req.body:
+{stock:number;}
+
+
+DELETE /item/{id}
+
+
+Return:
+{success:true}
+If item id could not be found:
+{success:false, message:"Item could not be found"}
+
+
+OBJECTS
+interface Item {
+id: string;
+type: string;
+color: string;
+size: "S" | "M" | "L";
+stock: number;
+}
+interface Order {
+id: string;
+itemId: string;
+quantity: number;
+}
+
+ADMIN TOKEN: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE1NjI1NzI0NjQsImV4cCI6MTU5NDEwODQ2OSwiYXVkIjoid3d3LnN0dWRlbnRzLjJoYXRzLmNvbS5hdSIsInN1YiI6InVzZXJAMmhhdHMuY29tLmF1IiwiR2l2ZW5OYW1lIjoiSm9obiIsIlN1cm5hbWUiOiJTbm93IiwiRW1haWwiOiJqb2huc25vd0AyaGF0cy5jb20uYXUiLCJSb2xlIjoiSmFuaXRvciJ9.BEEqb2ihfP0ec8TBu91T9lk0kcBKpz1NkJv4PpyjxdE
