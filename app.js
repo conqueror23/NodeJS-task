@@ -11,7 +11,7 @@ const Item = new mongoose.Schema({
     id:String,
     type: String,
     color: String,
-    size: "S" | "M" | "L",
+    size: { type: String, enum: ['S', 'M', 'L'] },
     stock: Number,
     },{versionKey:false}
 )
