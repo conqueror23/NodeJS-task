@@ -1,0 +1,23 @@
+What are the security implications of this app? How would you further improve the security of this inventory system.
+Only token was taken from the user to verify if the user is an adminstrator.I would suggest there should be autherization check for other users 
+as well. But it depends on which environment this server is going to works on.I think it`s ok if this is going to works in an internal network,
+but more sercurity measures need to be taken if this server is opened to outside customers.
+
+
+
+How would you handle exceptions in your app? What is the difference between an operational and programming error?
+For programming errors, I have print it out in the server console for operational error, has been responsed to client.As far as my concern, operational
+error is when the operators have conducted error operations or supplied wrong info to the system, and most of operational error are related to 
+human factors. On ther other hand, programming error is errors happend in the programs, usually caused by insufficient design and inappropriate
+code. 
+
+
+If you wanted to reverse any change made to the system or restore the system state at any point in time, what sort of architectural features would you add to your inventory system?
+I would sugget to add some version control mechanism here.Maybe keeps a lagacy system as a backup for contingencies. In the meanwhile, use verison control system like git or gitlabe
+to record each upgrade version. And introduce deployment mechanism to deploy to desired environment.
+
+
+How would you test this system? Whats the difference between a unit and integration tests?
+I would test each components of the system, and simulate a whole set walk through of how the company is going to use this system for. And possibily 
+try some abnormal operaitons to test the resilient of this system. a unit test is to test functions of each individual components while an intergration test is 
+test overall performance of the system which is more likely to the business walk through part.
