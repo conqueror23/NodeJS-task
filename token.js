@@ -1,2 +1,1 @@
-const token ='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9'
-export default token
+module.exports =TOKEN ='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9'

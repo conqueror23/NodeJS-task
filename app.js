@@ -1,11 +1,15 @@
 var express = require('express')
 var app = express()
 var bodyParser = require('body-parser')
+// TOKEN was put into .env file
 require('dotenv').config();
+//alternatively you may read token from a local file as well 
+// var TOKEN= require('./token')
+
 var mongoose = require('mongoose')
 const Message = require('./messages')
 
- mongoose.connect('mongodb://localhost/'+process.env.DB_NAME, {useNewUrlParser: true});
+mongoose.connect('mongodb://localhost/'+process.env.DB_NAME, {useNewUrlParser: true});
 // schema for two tables
 const Item = new mongoose.Schema({
     id:String,
@@ -22,18 +26,13 @@ const Order =new mongoose.Schema(
     quantity: Number,
     },{versionKey:false}
 )
-
+// Model of two tables
 const ItemModel = mongoose.model('Item',Item);
 const OrderModel = mongoose.model('Order',Order);
-
-// support parsing of application/json type post data
+// server preset
 app.use(bodyParser.json());
-
-//support parsing of application/x-www-form-urlencoded post data
 app.use(bodyParser.urlencoded({ extended: true }));
-app.get('/',function(req,res){
-    res.send('hello world')
-})
+// items route
 app.get('/items',function(req,res){
     var query =ItemModel.find()
     query.exec(function(err,data){
@@ -48,17 +47,14 @@ app.get('/items',function(req,res){
         }
   })
 })
-
+// items/{id}
 app.get('/items/:id',function(req,res){
     // check item with id
     var id =req.params.id;
     ItemModel.find({_id:id},function (err,data){
         if(err){
             console.log(err)
-
         }
-        console.log(data)
-
         if(data.length){
             res.send('succes:true,item:'+JSON.stringify(data))
         }else{
@@ -66,17 +62,16 @@ app.get('/items/:id',function(req,res){
         }
     })
 })
-
+// /orders route
 app.get('/orders',function(req,res){
     ItemModel.find().exec(function(err,data){
         if(err) console.log(err)
-
         if(data.length){
             res.send('sucess:true,order:'+JSON.stringify(data))
         }
     })
 })
-
+// /orders/id 
 app.get('/orders/:id',function (req,res){
     ItemModel.find({id:req.params.id},function(err,data){
         if(err) console.log(err)
@@ -87,10 +82,8 @@ app.get('/orders/:id',function (req,res){
         }
     })
 })
-
-// this is going need to change to item document as well 
+// /orders post route 
 app.post('/orders',function(req,res){
-    //request to order a specific item
     if(typeof(req.body.itemId)=='string'||typeof(req.body.itemId)=='number' &&typeof(req.body.quantity)=='number'){
         ItemModel.find({'id':req.body.itemId},function(err,data){
             if(data.length){
@@ -115,10 +108,8 @@ app.post('/orders',function(req,res){
         res.send('sucess:failed,message:'+Message['InvalidRequest'])
     }
 })
-
 // for admin test here 
 // if request with a header
-
 // need a function to check for admins
 function verifyAdmin(req,res){
     if(req.get('token') ==process.env.TOKEN){
@@ -130,69 +121,81 @@ function verifyAdmin(req,res){
         res.send("success:false,message:"+Message['Unauthorized']);
         return false 
     }
-    
 }
 
 // should be able to received multiple items?
 app.post('/items',function(req,res){
     var verify =verifyAdmin(req,res);
     if(verify){           
-            var item = new ItemModel({
-                type:req.body.type,
-                color:req.body.color,
-                size:req.body.size,
-                stock:req.body.stock
-            })
-            ItemModel.find({
-                type:req.body.type,
-                color:req.body.color,
-                size:req.body.size,
-            },function(err,data){
-                if(err) console.log(err)
-                // logic need to check out use an id field 
-                let id ,stock;
-                if(data[0].id!==undefined){
-                    id=data[0]._id
-                    stock=data[0].stock+req.body.stock
-                }else{
-                    id = req.body._id
-                    stock =req.body.stock
-                    ItemModel({
-                        _id:id,
-                        type:req.body.type,
-                        color:req.body.color,
-                        size:req.body.size,
-                        stock:stock
-                    }).replaceOne(function(err,data){
+    // test for input an array active following code should be working 
+    // req.body.items.forEach(body => {
+    //     console.log(body)
+    let body = req.body
+    let itemIds=[];
+        ItemModel.find({
+            type:body.type,
+            color:body.color,
+            size:body.size,
+        },function(err,data){
+            if(err) console.log(err)
+            // logic need to check out use an id field 
+            let id ,stock;
+            if(data.length){
+                id=data[0].id
+                stock=parseInt(data[0].stock)+parseInt(body.stock)
+                ItemModel.update({
+                    id:id},{stock:stock},function(err,data){
                         if(err) console.log(err)
                     })
-                }
-                
-            })
-        // add new items
+                    itemIds.push(id)
+            }else{
+                ItemModel.find().select('id').sort([['updatedAt', 'ascending']]).exec(function(err,data){
+                    if(err) console.log(err)
+                    id = data.length+1
+                    stock =body.stock
+                    ItemModel({
+                        id:id,
+                        type:body.type,
+                        color:body.color,
+                        size:body.size,
+                        stock:stock
+                    }).save(function(err,data){
+                        if(err) console.log(err)
+                    })
+                })
+                itemIds.push(body.id)
+            }
+            res.send('success:true,message:'+itemIds);
+        // })
+    });
     }
 })
-
+// patch for item
 app.patch('/item/:id',function(req,res){
     var verify =verifyAdmin(req,res);
     if(verify){
-        var item = ItemModel.find({id:req.body.id}).exec(function(err,data){
-            if(err) console.log(err)
-            //remove _id and _v first before continues
-            console.log(data)
-
-        })
+            ItemModel.update({
+                id:req.params.id},{stock:req.body.stock},function(err,data){
+                    if(err) console.log(err)
+                    console.log(data)
+                    res.send('You have changed '+data.nModified+' records')
+                })
     }
 })
-
+// delete items
 app.delete('/item/:id',function(req,res){
     var verify =verifyAdmin(req,res);
     if(verify){
-        // delete item
+        ItemModel.deleteOne({id:req.params.id},function(err,data){
+            if(err) console.log(err)
+            console.log(data)
+            if(data.deletedCount){
+                res.send('sucess:true')
+            }else{
+                res.send('sucess:false,message '+Message['ItemNotFound'])
+            }
+        })
     }
-
 })
-
-
 
 app.listen(3000)
